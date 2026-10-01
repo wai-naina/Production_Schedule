@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>First Credit Issuance Project Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FBFCFB; --ink:#16252A; --muted:#5B6B70; --rule:#D6DEDD; --rule-soft:#EBF0EF;
+  --oct:#1D7467; --cella:#B0700A; --iso:#3D57A3; --target:#B42318; --hatch:rgba(22,37,42,.09);
+  --label-w:340px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F191C; --ink:#E5EDEB; --muted:#9AABAE; --rule:#2B3B3F; --rule-soft:#1A272A;
+    --oct:#4DB8A7; --cella:#E2A53E; --iso:#86A0EC; --target:#F0715F; --hatch:rgba(229,237,235,.09);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F191C; --ink:#E5EDEB; --muted:#9AABAE; --rule:#2B3B3F; --rule-soft:#1A272A;
+  --oct:#4DB8A7; --cella:#E2A53E; --iso:#86A0EC; --target:#F0715F; --hatch:rgba(229,237,235,.09);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:17px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding:32px 28px 64px}
+.pages{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+.pages a{font-size:14px;font-weight:700;text-decoration:none;color:var(--muted);padding:6px 14px;border:1px solid var(--rule);border-radius:999px}
+.pages a:hover{color:var(--ink);border-color:var(--muted)}
+.pages a[aria-current="page"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.pages a:focus-visible{outline:3px solid var(--iso);outline-offset:2px}
+h1{font-size:clamp(28px,4vw,42px);line-height:1.1;margin:0;font-weight:700}
+h2{font-size:24px;margin:0 0 12px}
+section{margin:0 0 48px}
+
+.switch{display:inline-flex;border:1.5px solid var(--ink);border-radius:999px;padding:3px;margin:22px 0 22px}
+.switch button{font:inherit;font-size:16px;font-weight:700;border:0;background:transparent;color:var(--ink);
+  padding:8px 20px;border-radius:999px;cursor:pointer}
+.switch button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.switch button:focus-visible{outline:3px solid var(--iso);outline-offset:2px}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--muted);margin:0 0 12px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.sw{width:22px;height:10px;border-radius:3px;display:inline-block}
+.sw.slack{opacity:.38}
+.sw.other{background:transparent!important;border:1.5px dashed var(--muted);height:12px}
+.sw.dia{width:10px;height:10px;transform:rotate(45deg);border-radius:1px;background:var(--ink)}
+.sw.hatch{background:repeating-linear-gradient(135deg,var(--hatch) 0 4px,transparent 4px 8px);border:1px solid var(--rule)}
+
+.scroller{overflow-x:auto;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.chart{position:relative;min-width:1080px}
+.row{display:flex;align-items:stretch;min-height:30px}
+.row .lab{flex:0 0 var(--label-w);width:var(--label-w);padding:5px 14px 5px 0;font-size:15px;line-height:1.3;
+  position:sticky;left:0;background:var(--bg);z-index:3;display:flex;align-items:center;gap:8px}
+.row .trk{flex:1 1 auto;position:relative}
+.row.task .lab{padding-left:26px}
+.row.group{min-height:38px;border-top:1px solid var(--rule-soft)}
+.row.group .lab{font-weight:700;font-size:16px;justify-content:space-between}
+.row.group .lab .n{display:inline-block;width:20px;color:var(--muted)}
+.row.group .lab .closes{font-weight:400;font-size:14px;color:var(--muted);white-space:nowrap}
+.row.group .lab .closes b{color:var(--ink)}
+.row.head{position:sticky;top:0;z-index:5;background:var(--bg);min-height:74px;border-bottom:1px solid var(--rule)}
+.row.head .lab{z-index:6;color:var(--muted);font-size:14px;align-items:flex-end;padding-bottom:6px}
+.month{position:absolute;bottom:22px;font-size:14px;font-weight:700;padding-left:6px;border-left:1px solid var(--rule);height:24px;line-height:24px}
+.wk{position:absolute;bottom:4px;font-size:12px;color:var(--muted);transform:translateX(-50%)}
+.mlab{position:absolute;top:4px;font-size:13px;font-weight:700;color:var(--c);white-space:nowrap;padding:0 4px;border-left:2px solid var(--c);line-height:18px}
+.mlab.dash{border-left-style:dashed}
+.mlab.right{transform:translateX(-100%);border-left:0;border-right:2px solid var(--c)}
+
+.span{position:absolute;top:50%;height:2px;margin-top:-1px;background:var(--rule)}
+.bar{position:absolute;top:50%;height:16px;margin-top:-8px;border-radius:4px;background:var(--c);
+  transition:left .55s cubic-bezier(.3,.7,.2,1),width .55s cubic-bezier(.3,.7,.2,1),opacity .3s;z-index:2}
+.bar.slack{opacity:.38}
+.bar.ms{width:14px!important;height:14px;margin-top:-7px;margin-left:-7px;border-radius:2px;transform:rotate(45deg)}
+.ghost{position:absolute;top:50%;height:16px;margin-top:-8px;border-radius:4px;border:1.5px dashed var(--c);opacity:.55;
+  transition:left .55s cubic-bezier(.3,.7,.2,1),width .55s cubic-bezier(.3,.7,.2,1),opacity .3s;z-index:1;pointer-events:none}
+.ghost.ms{width:14px!important;height:14px;margin-top:-7px;margin-left:-7px;border-radius:2px;transform:rotate(45deg)}
+.bar:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+.overlay{position:absolute;top:0;bottom:0;left:var(--label-w);right:0;pointer-events:none;z-index:1}
+.tick{position:absolute;top:74px;bottom:0;width:1px;background:var(--rule-soft)}
+.hol{position:absolute;top:74px;bottom:0;background:repeating-linear-gradient(135deg,var(--hatch) 0 4px,transparent 4px 8px)}
+.vline{position:absolute;top:74px;bottom:0;width:0;border-left:2px solid var(--c)}
+.vline.dash{border-left-style:dashed}
+
+.tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--bg);font-size:14px;line-height:1.35;
+  padding:8px 10px;border-radius:6px;max-width:320px;opacity:0;transition:opacity .12s}
+.tip.on{opacity:1}
+.tip b{display:block;margin-bottom:2px}
+
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:15px}
+th,td{text-align:left;vertical-align:top;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule)}
+th{font-size:14px;color:var(--muted);font-weight:700;border-bottom:1.5px solid var(--ink)}
+th.on{color:var(--ink)}
+td.n{color:var(--muted);width:28px}
+td.g{font-weight:700}
+td.d{white-space:nowrap;width:150px;color:var(--muted)}
+td.d.on{color:var(--ink);font-weight:700}
+tr.sep td{padding-top:22px;font-weight:700;color:var(--muted)}
+
+@media (max-width:700px){:root{--label-w:250px}.wrap{padding:22px 16px 48px}}
+@media (prefers-reduced-motion:reduce){.bar,.ghost{transition:none}}
+@media print{.scroller{overflow:visible}.chart{min-width:0}.pages{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="pages" aria-label="Pages"><a href="index.html">Production schedule</a><a href="project-plan.html" aria-current="page">Project plan</a></nav>
+  <h1>First Credit Issuance Project Plan</h1>
+
+  <div class="switch" role="group" aria-label="Scenario">
+    <button type="button" data-case="best" aria-pressed="false">Best case</button>
+    <button type="button" data-case="base" aria-pressed="true">Base case</button>
+    <button type="button" data-case="worst" aria-pressed="false">Worst case</button>
+  </div>
+
+  <section>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--oct)"></i>Octavia</span>
+      <span><i class="sw" style="background:var(--cella)"></i>Cella</span>
+      <span><i class="sw" style="background:var(--iso)"></i>Isometric and VVB</span>
+      <span><i class="sw" style="background:var(--muted)"></i>Sets the issuance date</span>
+      <span><i class="sw slack" style="background:var(--muted)"></i>Has slack</span>
+      <span><i class="sw dia"></i>Milestone</span>
+      <span><i class="sw other"></i>Base case position</span>
+      <span><i class="sw hatch"></i>Office closure</span>
+    </div>
+    <div class="scroller"><div class="chart" id="chart"></div></div>
+  </section>
+
+  <section>
+    <h2>Gaps</h2>
+    <div class="tbl"><table>
+      <thead><tr><th></th><th>Gap</th><th>Owner</th><th data-c="best">Best case</th><th data-c="base">Base case</th><th data-c="worst">Worst case</th></tr></thead>
+      <tbody id="gapRows"></tbody>
+    </table></div>
+  </section>
+</div>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+(function(){
+  var d = function(s){ var p=s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); };
+  var DAY = 864e5;
+  var START = d('2026-09-28'), END = d('2027-03-01');
+  var SPAN = Math.round((END-START)/DAY);
+  var pct = function(dt){ return Math.max(0, Math.min(100, (dt-START)/DAY/SPAN*100)); };
+  var fmt = function(dt, yr){ return dt.toLocaleDateString('en-GB', yr ? {day:'numeric',month:'short',year:'numeric'} : {day:'numeric',month:'short'}); };
+  var fy = function(dt){ return fmt(dt, dt.getFullYear()>2026); };
+  var OWN = {oct:'Octavia', cella:'Cella', iso:'Isometric / VVB'};
+  var ORDER = ['best','base','worst'], NAMES = {best:'Best case', base:'Base case', worst:'Worst case'};
+
+  var gaps = [
+    {n:1, name:'Site ready for the monitoring period', owner:'Meshack, Operations'},
+    {n:2, name:'Storage pre-screen', owner:'Cella'},
+    {n:3, name:'Isometric review and close-out', owner:'Isometric'},
+    {n:4, name:'Public comment period', owner:'Isometric'},
+    {n:5, name:'VVB introduced', owner:'Isometric, 350 Solutions'},
+    {n:6, name:'Site visit and validation review', owner:'350 Solutions'},
+    {n:7, name:'First injection and GHG statement', owner:'Operations, Brian, Cella'},
+    {n:8, name:'Verification to issuance', owner:'350 Solutions, Isometric, Brian'},
+    {n:'P', name:'Running alongside', owner:''}
+  ];
+
+  // id, gap, task, owner, best [start,end], base [start,end], worst [start,end], milestone, cases where it sets the date
+  var T = [
+    ['1a',1,'Calibrate load cells, flow meter and gas analyser','oct',['2026-10-05','2026-10-05'],['2026-10-05','2026-10-05'],['2026-10-12','2026-10-12'],0,'best base'],
+    ['1b',1,'Empty cryo tank and buffer collector, record zero','oct',['2026-10-05','2026-10-05'],['2026-10-05','2026-10-05'],['2026-10-12','2026-10-12'],0,'best base'],
+    ['1c',1,'Monitoring period starts','oct',['2026-10-06','2026-10-06'],['2026-10-06','2026-10-06'],['2026-10-13','2026-10-13'],1,'best base'],
+    ['2a',2,'Three-way call: Octavia, Cella, Isometric','oct',['2026-10-07','2026-10-07'],['2026-10-07','2026-10-07'],['2026-10-09','2026-10-09'],1,''],
+    ['2b',2,'Cella completes the storage tab in Certify','cella',['2026-10-05','2026-10-09'],['2026-10-05','2026-10-09'],['2026-10-05','2026-10-23'],0,'worst'],
+    ['3a',3,'Isometric reviews storage, PDD and LCA comments closed','iso',['2026-10-12','2026-10-16'],['2026-10-12','2026-10-21'],['2026-10-26','2026-11-06'],0,'worst'],
+    ['3b',3,'Redactions confirmed for public comment','iso',['2026-10-16','2026-10-16'],['2026-10-21','2026-10-21'],['2026-11-06','2026-11-06'],1,'worst'],
+    ['4a',4,'Public comment period (10 days)','iso',['2026-10-19','2026-10-28'],['2026-10-26','2026-11-04'],['2026-11-09','2026-11-18'],0,'worst'],
+    ['5a',5,'VVB contracting (Isometric and 350 Solutions)','iso',['2026-09-21','2026-10-16'],['2026-09-21','2026-10-23'],['2026-09-21','2026-10-30'],0,''],
+    ['5b',5,'VVB kick-off call','iso',['2026-10-21','2026-10-21'],['2026-10-28','2026-10-28'],['2026-11-11','2026-11-11'],1,'worst'],
+    ['5c',5,'Validation data shared with the VVB','oct',['2026-10-21','2026-10-23'],['2026-10-28','2026-10-30'],['2026-11-11','2026-11-13'],0,''],
+    ['6a',6,'Plan the visit and book VVB flights','iso',['2026-10-21','2026-11-06'],['2026-10-28','2026-11-13'],['2026-11-11','2026-11-27'],0,'worst'],
+    ['6b',6,'Site visit: capture site and Cella wellsite','iso',['2026-11-10','2026-11-12'],['2026-11-17','2026-11-19'],['2026-12-01','2026-12-03'],0,'worst'],
+    ['6c',6,'VVB review of PDD, storage and LCA','iso',['2026-10-26','2026-11-18'],['2026-11-02','2026-11-25'],['2026-11-16','2026-12-11'],0,'worst'],
+    ['7a',7,'Capture period','oct',['2026-10-06','2026-10-16'],['2026-10-06','2026-10-20'],['2026-10-13','2026-10-30'],0,'best base'],
+    ['7b',7,'Transfer to Cella and inject','cella',['2026-10-19','2026-10-20'],['2026-10-22','2026-10-24'],['2026-11-02','2026-11-06'],0,'best base'],
+    ['7c',7,'Aggregate data for the GHG statement','oct',['2026-10-21','2026-10-27'],['2026-10-26','2026-10-30'],['2026-11-09','2026-11-13'],0,'best base'],
+    ['7d',7,'Submit GHG statement','oct',['2026-10-28','2026-10-28'],['2026-11-02','2026-11-02'],['2026-11-16','2026-11-16'],1,'best base'],
+    ['8a',8,'VVB verification review and data queries','iso',['2026-10-28','2026-11-20'],['2026-11-02','2026-11-27'],['2026-11-16','2026-12-04'],0,'best base'],
+    ['8b',8,'VVB draft V&V report','iso',['2026-11-16','2026-11-20'],['2026-11-30','2026-12-04'],['2026-12-14','2026-12-18'],0,'best base worst'],
+    ['8c',8,'Respond to draft report feedback','oct',['2026-11-23','2026-11-25'],['2026-12-07','2026-12-09'],['2027-01-04','2027-01-08'],0,'best base worst'],
+    ['8d',8,'Redactions and final report review','iso',['2026-11-26','2026-11-27'],['2026-12-10','2026-12-11'],['2027-01-11','2027-01-15'],0,'best base worst'],
+    ['8e',8,'Credit issuance','iso',['2026-11-30','2026-11-30'],['2026-12-15','2026-12-15'],['2027-01-19','2027-01-19'],1,'best base worst'],
+    ['p1','P','Geologist sign-off on Cella documentation','cella',['2026-09-14','2026-10-14'],['2026-09-14','2026-10-14'],['2026-09-14','2026-10-28'],0,''],
+    ['p2','P','Storage agreement signed','oct',['2026-10-01','2026-10-23'],['2026-10-01','2026-10-30'],['2026-10-01','2026-11-20'],0,''],
+    ['p3','P','Cella confirms biodiesel for the injection genset','cella',['2026-10-01','2026-10-09'],['2026-10-01','2026-10-16'],['2026-10-01','2026-10-30'],0,''],
+    ['p4','P','Isometric position on RECs','iso',['2026-10-01','2026-10-02'],['2026-10-01','2026-10-09'],['2026-10-01','2026-10-16'],0,'']
+  ].map(function(r){
+    var f = function(a){ return [d(a[0]), d(a[1])]; };
+    return {id:r[0],gap:r[1],name:r[2],own:r[3],dt:{best:f(r[4]),base:f(r[5]),worst:f(r[6])},ms:!!r[7],crit:r[8].split(' ')};
+  });
+
+  var el = function(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; };
+  var chart = document.getElementById('chart');
+
+  // header: months, weeks, markers
+  var head = el('div','row head'); head.appendChild(el('div','lab','Task'));
+  var ht = el('div','trk');
+  for (var m = new Date(2026,9,1); m < END; m = new Date(m.getFullYear(), m.getMonth()+1, 1)) {
+    var mm = el('div','month', m.toLocaleDateString('en-GB',{month:'short', year:(m.getMonth()===0||m.getMonth()===9)?'numeric':undefined}));
+    mm.style.left = pct(m)+'%'; ht.appendChild(mm);
+  }
+  for (var w = new Date(START); w < END; w = new Date(w.getTime()+7*DAY)) {
+    var wk = el('div','wk', w.getDate()); wk.style.left = (pct(w)+pct(new Date(w.getTime()+7*DAY)))/2+'%'; ht.appendChild(wk);
+  }
+  head.appendChild(ht); chart.appendChild(head);
+
+  var ov = el('div','overlay');
+  for (var w2 = new Date(START.getTime()+7*DAY); w2 < END; w2 = new Date(w2.getTime()+7*DAY)) {
+    var t = el('div','tick'); t.style.left = pct(w2)+'%'; ov.appendChild(t);
+  }
+  var hol = el('div','hol'); hol.style.left = pct(d('2026-12-21'))+'%'; hol.style.width = (pct(d('2027-01-04'))-pct(d('2026-12-21')))+'%'; ov.appendChild(hol);
+  var mark = function(dt, label, color, dash, right){
+    var x = pct(new Date(dt.getTime()+DAY/2))+'%';
+    var v = el('div','vline'+(dash?' dash':'')); v.style.left = x; v.style.setProperty('--c', color); ov.appendChild(v);
+    var lb = el('div','mlab'+(dash?' dash':'')+(right?' right':''), label); lb.style.left = x; lb.style.setProperty('--c', color); ht.appendChild(lb);
+  };
+  var today = new Date(); today = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (today >= START && today < END) mark(today,'Today','var(--muted)',false,false);
+  mark(d('2026-12-15'),'Target 15 Dec','var(--target)',false,true);
+  mark(d('2027-01-31'),'Isometric: February','var(--iso)',true,false);
+  chart.appendChild(ov);
+
+  // rows
+  var bars = [];
+  gaps.forEach(function(g){
+    var gr = el('div','row group'), lab = el('div','lab');
+    lab.appendChild(el('span','', '<span class="n">'+(g.n==='P'?'':g.n)+'</span>'+g.name));
+    var cl = el('span','closes'); lab.appendChild(cl); gr.appendChild(lab);
+    var gt = el('div','trk'), sp = el('div','span'); gt.appendChild(sp); gr.appendChild(gt);
+    chart.appendChild(gr); g.closesEl = cl; g.spanEl = sp;
+    T.filter(function(x){ return x.gap===g.n; }).forEach(function(x){
+      var r = el('div','row task'); r.appendChild(el('div','lab', x.name));
+      var tr = el('div','trk');
+      var gh = el('div','ghost'+(x.ms?' ms':'')); gh.style.setProperty('--c','var(--'+x.own+')');
+      var b = el('div','bar'+(x.ms?' ms':'')); b.style.setProperty('--c','var(--'+x.own+')'); b.tabIndex = 0; b.setAttribute('role','img');
+      tr.appendChild(gh); tr.appendChild(b); r.appendChild(tr); chart.appendChild(r);
+      bars.push({t:x, bar:b, ghost:gh});
+    });
+  });
+
+  var place = function(node, s, e, ms){
+    if (ms) { node.style.left = pct(new Date(s.getTime()+DAY/2))+'%'; node.style.width = ''; }
+    else { var l = pct(s), r = pct(new Date(e.getTime()+DAY)); node.style.left = l+'%'; node.style.width = Math.max(r-l,0.45)+'%'; }
+  };
+  var days = function(s,e){ return Math.round((e-s)/DAY)+1; };
+  var span = function(a, ms){ return (ms || +a[0]===+a[1]) ? fmt(a[0],true) : fmt(a[0])+' to '+fmt(a[1],true); };
+
+  // tooltip
+  var tip = document.getElementById('tip'), cur = 'base';
+  var tipFor = function(o){
+    var x = o.t, a = x.dt[cur];
+    var when = (x.ms || +a[0]===+a[1]) ? fmt(a[0],true) : fmt(a[0])+' to '+fmt(a[1],true)+' ('+days(a[0],a[1])+' days)';
+    var others = ORDER.filter(function(k){ return k!==cur; }).map(function(k){ return NAMES[k]+': '+span(x.dt[k], x.ms); }).join('<br>');
+    return '<b>'+x.name+'</b>'+OWN[x.own]+'<br>'+NAMES[cur]+': '+when+'<br>'+others;
+  };
+  var showTip = function(o, ev){
+    tip.innerHTML = tipFor(o); tip.classList.add('on');
+    var r = o.bar.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+    var x = ev && ev.clientX ? ev.clientX : r.left + r.width/2;
+    tip.style.left = Math.max(8, Math.min(window.innerWidth - tw - 8, x - tw/2))+'px';
+    tip.style.top = (r.top - th - 10 < 8 ? r.bottom + 10 : r.top - th - 10)+'px';
+  };
+  var hideTip = function(){ tip.classList.remove('on'); };
+  bars.forEach(function(o){
+    o.bar.addEventListener('mouseenter', function(ev){ showTip(o, ev); });
+    o.bar.addEventListener('mousemove', function(ev){ showTip(o, ev); });
+    o.bar.addEventListener('mouseleave', hideTip);
+    o.bar.addEventListener('focus', function(){ showTip(o); });
+    o.bar.addEventListener('blur', hideTip);
+    o.bar.addEventListener('click', function(ev){ ev.stopPropagation(); showTip(o, ev); });
+  });
+  document.addEventListener('click', hideTip);
+  window.addEventListener('scroll', hideTip, {passive:true});
+  document.querySelector('.scroller').addEventListener('scroll', hideTip, {passive:true});
+
+  // gaps table
+  var tb = document.getElementById('gapRows');
+  var maxEnd = function(n, k){ var m=null; T.forEach(function(x){ if(x.gap===n && (!m || x.dt[k][1]>m)) m=x.dt[k][1]; }); return m; };
+  var minStart = function(n, k){ var m=null; T.forEach(function(x){ if(x.gap===n && (!m || x.dt[k][0]<m)) m=x.dt[k][0]; }); return m; };
+  var cells = function(vals){ return ORDER.map(function(k,i){ return '<td class="d" data-c="'+k+'">'+vals[i]+'</td>'; }).join(''); };
+  var addRow = function(n, name, owner, vals, cls){
+    var tr = el('tr', cls||''); tr.innerHTML = '<td class="n">'+n+'</td><td class="g">'+name+'</td><td>'+owner+'</td>'+cells(vals); tb.appendChild(tr);
+  };
+  gaps.forEach(function(g){
+    if (g.n==='P') return;
+    addRow(g.n, g.name, g.owner, ORDER.map(function(k){ return fy(maxEnd(g.n,k)); }));
+  });
+  addRow(9, 'Volume for first verification (50 t net)', 'Brian, Isometric', ['Feb 2028','Jun 2028','Oct 2028']);
+  var sep = el('tr','sep'); sep.innerHTML = '<td></td><td colspan="5">Running alongside</td>'; tb.appendChild(sep);
+  [['p1','Geologist sign-off','Cella'],['p2','Storage agreement','Martin, Cella'],
+   ['p3','Power for injection at Cella','Zack, Cella'],['p4','RECs','Isometric (David, Jay)']].forEach(function(x){
+    var t = T.filter(function(q){ return q.id===x[0]; })[0];
+    addRow('', x[1], x[2], ORDER.map(function(k){ return fmt(t.dt[k][1]); }));
+  });
+
+  // switch case
+  var apply = function(k){
+    cur = k;
+    document.querySelectorAll('.switch button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.case===k ? 'true':'false'); });
+    bars.forEach(function(o){
+      var x=o.t, a=x.dt[k], base=x.dt.base;
+      place(o.bar, a[0], a[1], x.ms);
+      o.bar.classList.toggle('slack', x.crit.indexOf(k)<0);
+      o.bar.setAttribute('aria-label', x.name+', '+span(a, x.ms));
+      place(o.ghost, base[0], base[1], x.ms);
+      o.ghost.style.opacity = (k==='base' || (+base[0]===+a[0] && +base[1]===+a[1])) ? '0' : '';
+    });
+    gaps.forEach(function(g){
+      var me = maxEnd(g.n,k), ms = minStart(g.n,k);
+      g.closesEl.innerHTML = (g.n==='P' ? 'last item ' : 'closes ')+'<b>'+fy(me)+'</b>';
+      var l=pct(ms), r=pct(new Date(me.getTime()+DAY)); g.spanEl.style.left=l+'%'; g.spanEl.style.width=(r-l)+'%';
+    });
+    document.querySelectorAll('[data-c]').forEach(function(c){ c.classList.toggle('on', c.dataset.c===k); });
+    hideTip();
+    try { history.replaceState(null,'','#'+k); } catch(e){}
+  };
+  document.querySelectorAll('.switch button').forEach(function(b){ b.addEventListener('click', function(){ apply(b.dataset.case); }); });
+  document.addEventListener('keydown', function(e){
+    var i = ORDER.indexOf(cur);
+    if (e.key==='ArrowRight' && i<2) { e.preventDefault(); apply(ORDER[i+1]); }
+    if (e.key==='ArrowLeft' && i>0) { e.preventDefault(); apply(ORDER[i-1]); }
+  });
+  var h = location.hash.slice(1); apply(ORDER.indexOf(h)>=0 ? h : 'base');
+})();
+</script>
+</body>
+</html>

@@ -108,15 +108,15 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
   <div class="targets" role="group" aria-label="Credit target" id="targets"></div>
   <p class="targets-note">10 credits is the company north star.</p>
 
-  <div class="daily"><label for="rateN">If we capture</label><input type="number" id="rateN" min="0" step="1" value="94" inputmode="decimal"><span>kg of CO₂ a day</span></div>
-  <input type="range" class="daily-range" id="rate" min="0" max="3000" step="5" value="94" aria-label="Daily capture">
+  <div class="daily"><label for="rateN">If we collect</label><input type="number" id="rateN" min="0" step="1" value="94" inputmode="decimal"><span>kg of CO₂ a day</span></div>
+  <input type="range" class="daily-range" id="rate" min="0" max="3000" step="5" value="94" aria-label="CO₂ collected per day">
   <p class="result" id="result"></p>
 
   <div class="verdict">
-    <div><div class="n" id="vPer"></div><div class="l">Capture needed per day</div></div>
-    <div><div class="n" id="vCap"></div><div class="l">Total to capture</div></div>
+    <div><div class="n" id="vPer"></div><div class="l">CO₂ collected per day needed</div></div>
+    <div><div class="n" id="vCap"></div><div class="l">Total CO₂ collected</div></div>
     <div><div class="n" id="vRE"></div><div class="l">Removal efficiency</div></div>
-    <div><div class="n" id="vCr"></div><div class="l">Credits at this daily capture</div></div>
+    <div><div class="n" id="vCr"></div><div class="l">Credits at this daily collection</div></div>
   </div>
   <p class="status" id="status"></p>
 
@@ -126,7 +126,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
     <section>
       <h3 id="h1title">First injection</h3>
       <dl>
-        <dt>CO₂ captured</dt><dd id="a1"></dd>
+        <dt>CO₂ collected</dt><dd id="a1"></dd>
         <dt>CO₂ liquefied</dt><dd id="a2"></dd>
         <dt>Lost to boil-off at Cella</dt><dd id="a6"></dd>
         <dt>CO₂ injected</dt><dd id="a3"></dd>
@@ -137,7 +137,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
     <section>
       <h3 id="h2title">Second injection</h3>
       <dl>
-        <dt>CO₂ captured</dt><dd id="b1"></dd>
+        <dt>CO₂ collected</dt><dd id="b1"></dd>
         <dt>CO₂ liquefied</dt><dd id="b2"></dd>
         <dt>Lost to boil-off at Cella</dt><dd id="b6"></dd>
         <dt>CO₂ injected</dt><dd id="b3"></dd>
@@ -150,7 +150,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
   <h2>The credit ladder</h2>
 
   <div class="scroll"><table>
-    <thead><tr><th>Credits</th><th>Capture per day needed (kg)</th><th>Total capture (t)</th><th>Total liquefied (t)</th><th>Lost to boil-off (t)</th><th>Days at this daily capture</th><th>Ready by injection?</th></tr></thead>
+    <thead><tr><th>Credits</th><th>Collected per day needed (kg)</th><th>Total collected (t)</th><th>Total liquefied (t)</th><th>Lost to boil-off (t)</th><th>Days at this daily collection</th><th>Ready by injection?</th></tr></thead>
     <tbody id="ladder"></tbody>
   </table></div>
 
@@ -172,8 +172,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 
   </div>
   <div class="f">
-    <label for="energyN">Capture energy (MWh per tonne captured)</label>
-    <div class="pair"><input type="number" id="energyN" min="1" step="0.1" value="42.5"><input type="range" id="energy" min="5" max="60" step="0.5" value="42.5" aria-label="Capture energy"></div>
+    <label for="energyN">Energy (MWh per tonne collected)</label>
+    <div class="pair"><input type="number" id="energyN" min="1" step="0.1" value="42.5"><input type="range" id="energy" min="5" max="60" step="0.5" value="42.5" aria-label="Energy per tonne collected"></div>
   </div>
   <div class="f">
     <label for="fuel">Power at Cella</label>
@@ -181,6 +181,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
       <option value="0.2898">B100</option>
       <option value="0.768">B50</option>
       <option value="1.2077">Diesel</option>
+      <option value="0.0579">Grid</option>
       <option value="0.0046">Grid + REC</option>
     </select>
   </div>
@@ -274,7 +275,7 @@ function render(){
   const fuelName=$('fuel').selectedOptions[0].text;
   const per=rateFor(s,target,daysHave,s.cown);
   const tb=isFinite(per)?batch(s,per,daysHave,s.cown):null;
-  $('hero').innerHTML=isFinite(per)?`To issue <b>${target} credit${target>1?'s':''}</b>, we need to capture <b>${kg(per)} kg of CO₂ a day</b> from ${fmtD(s.restart)} to the ${fmtD(s.inj1)} injection.`:`At these settings, no daily capture reaches ${target} credit${target>1?'s':''} by ${fmtD(s.inj1)}.`;
+  $('hero').innerHTML=isFinite(per)?`To issue <b>${target} credit${target>1?'s':''}</b>, we need to collect <b>${kg(per)} kg of CO₂ a day</b> from ${fmtD(s.restart)} to the ${fmtD(s.inj1)} injection.`:`At these settings, no daily collection reaches ${target} credit${target>1?'s':''} by ${fmtD(s.inj1)}.`;
   $('vPer').textContent=isFinite(per)?kg(per)+' kg':'n/a';
   $('vCap').textContent=tb?fmtT(tb.C)+' t':'n/a';
   $('vRE').textContent=tb?Math.round(tb.re*100)+'%':'n/a';

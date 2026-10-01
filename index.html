@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>First Credit Issuance Production Schedule</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,600;1,8..60,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --paper:#F4F6F5; --card:#FFFFFF; --ink:#1B2421; --mute:#5F6B66; --line:#D3DBD8;
+  --teal:#2E6B5F; --deep:#12302C; --flag:#C4553A; --ok-bg:#E3EFEB; --no-bg:#F6E4DF;
+  --serif:"Source Serif 4", Cambria, Georgia, serif; --sans:"Public Sans", "Segoe UI", Arial, sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --paper:#0E1715; --card:#14201D; --ink:#E4EBE8; --mute:#9AA8A2; --line:#2A3834;
+    --teal:#5FAE9B; --deep:#A9DCCD; --flag:#E58468; --ok-bg:#183530; --no-bg:#3A221C; }
+}
+:root[data-theme="dark"]{ --paper:#0E1715; --card:#14201D; --ink:#E4EBE8; --mute:#9AA8A2; --line:#2A3834;
+  --teal:#5FAE9B; --deep:#A9DCCD; --flag:#E58468; --ok-bg:#183530; --no-bg:#3A221C; }
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;border-bottom:2px solid var(--deep);padding-bottom:10px}
+header h1{font-family:var(--serif);font-style:italic;font-weight:700;font-size:clamp(26px,3.4vw,38px);color:var(--deep);margin:0;letter-spacing:-.01em}
+header p{margin:0;color:var(--mute);font-size:14px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:32px;margin-top:28px}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+.hero{font-family:var(--serif);font-size:clamp(22px,2.6vw,30px);line-height:1.35;font-weight:400;max-width:34ch;margin:0 0 18px}
+.hero b{font-weight:600;color:var(--deep)}
+.targets{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.targets button{font:600 15px var(--sans);min-width:44px;height:40px;padding:0 12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:4px;cursor:pointer}
+.targets button[aria-pressed="true"]{background:var(--deep);border-color:var(--deep);color:var(--paper)}
+.targets button.star{border-style:dashed}
+.targets-note{font-size:13px;color:var(--mute);margin:0 0 22px}
+.verdict{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--line);background:var(--card)}
+@media (max-width:640px){.verdict{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.verdict > div{padding:14px 16px;border-right:1px solid var(--line)}
+.verdict > div:last-child{border-right:0}
+.verdict .n{font-family:var(--serif);font-size:28px;font-weight:600;line-height:1.1}
+.verdict .l{font-size:13px;color:var(--mute);margin-top:4px}
+.status{margin:14px 0 0;padding:12px 16px;font-weight:600;border-left:4px solid}
+.status.ok{background:var(--ok-bg);border-color:var(--teal)}
+.status.no{background:var(--no-bg);border-color:var(--flag)}
+h2{font-family:var(--serif);font-weight:600;font-size:22px;margin:40px 0 4px}
+.sub{color:var(--mute);font-size:14px;margin:0 0 14px;max-width:72ch}
+.have{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:640px){.have{grid-template-columns:1fr}}
+.have section{background:var(--card);border:1px solid var(--line);padding:16px 18px}
+.have h3{margin:0 0 8px;font-size:15px;font-weight:700}
+.have dl{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin:0;font-size:15px}
+.have dt{color:var(--mute)} .have dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.have .big{font-family:var(--serif);font-size:26px;color:var(--deep)}
+.scroll{overflow-x:auto;border:1px solid var(--line);background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:15px;font-variant-numeric:tabular-nums}
+th,td{padding:9px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--mute);font-size:13px;border-bottom:2px solid var(--deep)}
+th:first-child,td:first-child{text-align:left}
+tr.sel td{background:var(--ok-bg);font-weight:600}
+td.yes{color:var(--teal);font-weight:700} td.nope{color:var(--flag);font-weight:600}
+.chartbox{background:var(--card);border:1px solid var(--line);padding:12px;height:340px;position:relative}
+ol.time{list-style:none;margin:0;padding:0;border-left:2px solid var(--deep)}
+ol.time li{position:relative;padding:0 0 14px 20px}
+ol.time li::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--paper);border:2px solid var(--deep)}
+ol.time li.key::before{background:var(--deep)}
+ol.time .d{font-weight:700;font-variant-numeric:tabular-nums;min-width:92px;display:inline-block}
+ol.time .t{color:var(--ink)} ol.time .x{display:block;color:var(--mute);font-size:13px}
+aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;background:var(--card);border:1px solid var(--line);padding:18px}
+@media (max-width:900px){aside{position:static}}
+aside h2{margin:0 0 12px;font-size:18px}
+.f{margin:0 0 16px}
+.f label{display:block;font-size:14px;font-weight:600;margin-bottom:5px}
+.f .v{float:right;font-weight:700;color:var(--deep);font-variant-numeric:tabular-nums}
+.f select,.f input[type=date]{width:100%;font:15px var(--sans);padding:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px}
+.f input[type=range]{width:100%;accent-color:var(--teal)}
+.f small{display:block;color:var(--mute);font-size:12px;margin-top:3px}
+.quick{display:flex;gap:6px;margin-top:6px}
+.quick button{flex:1;font:600 13px var(--sans);padding:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.basis{font-size:13px;color:var(--mute);margin-top:36px;max-width:90ch}
+.daily{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-family:var(--serif);font-size:clamp(20px,2.3vw,26px);margin:26px 0 6px}
+.daily input[type=number]{font:600 clamp(20px,2.3vw,26px) var(--serif);width:5.2em;padding:4px 8px;border:1.5px solid var(--deep);background:var(--card);color:var(--deep);border-radius:4px}
+.daily-range{width:100%;max-width:560px;accent-color:var(--teal);margin:4px 0 4px}
+.result{font-family:var(--serif);font-size:clamp(20px,2.3vw,26px);margin:0 0 18px}
+.result b{color:var(--deep)}
+.f .pair{display:flex;gap:8px;align-items:center}
+.f .pair input[type=number]{width:90px;font:600 15px var(--sans);padding:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px}
+.note{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);padding:12px 16px;margin-top:16px;font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>First Credit Issuance Production Schedule</h1>
+  <p>Credits issued 15 December 2026</p>
+</header>
+
+<div class="layout">
+<main>
+  <p class="hero" id="hero"></p>
+  <div class="targets" role="group" aria-label="Credit target" id="targets"></div>
+  <p class="targets-note">10 credits is the company north star.</p>
+
+  <div class="daily"><label for="rateN">If we capture</label><input type="number" id="rateN" min="0" step="1" value="94" inputmode="decimal"><span>kg of CO₂ a day</span></div>
+  <input type="range" class="daily-range" id="rate" min="0" max="3000" step="5" value="94" aria-label="Daily capture">
+  <p class="result" id="result"></p>
+
+  <div class="verdict">
+    <div><div class="n" id="vPer"></div><div class="l">Capture needed per day</div></div>
+    <div><div class="n" id="vCap"></div><div class="l">Total to capture</div></div>
+    <div><div class="n" id="vRE"></div><div class="l">Removal efficiency</div></div>
+    <div><div class="n" id="vCr"></div><div class="l">Credits at this daily capture</div></div>
+  </div>
+  <p class="status" id="status"></p>
+
+  <h2>What we will have</h2>
+  
+  <div class="have">
+    <section>
+      <h3 id="h1title">First injection</h3>
+      <dl>
+        <dt>CO₂ captured</dt><dd id="a1"></dd>
+        <dt>CO₂ liquefied</dt><dd id="a2"></dd>
+        <dt>CO₂ injected</dt><dd id="a3"></dd>
+        <dt>Removal efficiency</dt><dd id="a5"></dd>
+        <dt>Credits, issued 15 Dec</dt><dd class="big" id="a4"></dd>
+      </dl>
+    </section>
+    <section>
+      <h3 id="h2title">Second injection</h3>
+      <dl>
+        <dt>CO₂ captured</dt><dd id="b1"></dd>
+        <dt>CO₂ liquefied</dt><dd id="b2"></dd>
+        <dt>Credits, issued in 2027</dt><dd class="big" id="b4"></dd>
+        <dt>Both injections</dt><dd id="b5"></dd>
+      </dl>
+    </section>
+  </div>
+
+  <h2>The credit ladder</h2>
+  
+  <div class="scroll"><table>
+    <thead><tr><th>Credits</th><th>Capture per day needed (kg)</th><th>Total capture (t)</th><th>Total liquefied (t)</th><th>Days at this daily capture</th><th>Ready by injection?</th></tr></thead>
+    <tbody id="ladder"></tbody>
+  </table></div>
+
+  <h2>Credits by injection day</h2>
+  
+  <div class="chartbox"><canvas id="chart" aria-label="Credits by injection day"></canvas></div>
+
+  <h2>Working back from 15 December</h2>
+  
+  <ol class="time" id="time"></ol>
+
+</main>
+
+<aside aria-label="Settings">
+  <h2>Settings</h2>
+  <div class="f">
+    <label for="liq">Liquefaction <span class="v" id="liqV"></span></label>
+    <input type="range" id="liq" min="30" max="90" step="5" value="70">
+    
+  </div>
+  <div class="f">
+    <label for="energyN">Capture energy (MWh per tonne captured)</label>
+    <div class="pair"><input type="number" id="energyN" min="1" step="0.1" value="42.5"><input type="range" id="energy" min="5" max="60" step="0.5" value="42.5" aria-label="Capture energy"></div>
+  </div>
+  <div class="f">
+    <label for="fuel">Power at Cella</label>
+    <select id="fuel">
+      <option value="0.2898">B100</option>
+      <option value="0.768">B50</option>
+      <option value="1.2077">Diesel</option>
+      <option value="0.0046">Grid + REC</option>
+    </select>
+  </div>
+  <div class="f">
+    <label for="tl">Transfer loss <span class="v" id="tlV"></span></label>
+    <input type="range" id="tl" min="0" max="5" step="0.5" value="0.5">
+  </div>
+  <div class="f">
+    <label for="il">Injection loss <span class="v" id="ilV"></span></label>
+    <input type="range" id="il" min="0" max="5" step="0.5" value="0.5">
+  </div>
+  <div class="f">
+    <label for="restart">Monitoring period restart</label>
+    <input type="date" id="restart" value="2026-10-09">
+    <div class="quick"><button type="button" data-r="2026-10-05">Best, 5 Oct</button><button type="button" data-r="2026-10-09">Base, 9 Oct</button></div>
+  </div>
+  <div class="f">
+    <label for="inj1">First injection</label>
+    <input type="date" id="inj1" value="2026-10-24">
+    
+  </div>
+  <div class="f">
+    <label for="inj2">Second injection</label>
+    <input type="date" id="inj2" value="2026-12-20">
+  </div>
+</aside>
+</div>
+</div>
+
+<script>
+const P={tl:0.005,il:0.005,emb:0.27190,trans:0.0024576,well:0.00043133,efCap:0.0046,pump:500,start:0.5,kwe:137.5};
+const ISSUE=new Date('2026-12-15T00:00:00');
+let target=1;
+const kg=v=>Math.round(v).toLocaleString('en-GB');
+const $=id=>document.getElementById(id);
+const DAY=864e5;
+const fmtT=kg=>(kg/1000).toLocaleString('en-GB',{minimumFractionDigits:kg<10000?2:1,maximumFractionDigits:kg<10000?2:1});
+const fmtD=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+const parse=v=>new Date(v+'T00:00:00');
+
+function settings(){
+  return {eta:+$('liq').value/100, R:Math.max(0,+$('rateN').value||0), intK:Math.max(0.1,+$('energyN').value||0.1), ef:+$('fuel').value,
+    restart:parse($('restart').value), inj1:parse($('inj1').value), inj2:parse($('inj2').value), tl:+$('tl').value/100, il:+$('il').value/100};
+}
+function model(s){
+  const ret=(1-s.tl)*(1-s.il);
+  const a=ret - s.intK*P.efCap/s.eta - P.emb - P.trans*(1-s.tl) - (1-s.tl)/P.pump*P.kwe*s.ef - P.well*(1-s.tl);
+  const b=P.start*P.kwe*s.ef;
+  const credits=L=>L<=0?0:(a*L-b)/1000;
+  const re=L=>L<=0?0:(a*L-b)/(L*ret);
+  const needL=N=>a>0?(1000*N+b)/a:Infinity;
+  return {a,b,ret,credits,needL,re};
+}
+function render(){
+  const s=settings(), m=model(s);
+  $('liqV').textContent=Math.round(s.eta*100)+'%';
+  $('tlV').textContent=(s.tl*100).toFixed(1)+'%'; $('ilV').textContent=(s.il*100).toFixed(1)+'%';
+  const daysHave=Math.max(0,Math.round((s.inj1-s.restart)/DAY));
+  const L=m.needL(target), C=L/s.eta, days=C/s.R, per=C/Math.max(daysHave,1);
+  const fuelName=$('fuel').selectedOptions[0].text;
+  $('hero').innerHTML=isFinite(C)?`To issue <b>${target} credit${target>1?'s':''}</b>, we need to capture <b>${kg(per)} kg of CO₂ a day</b> from ${fmtD(s.restart)} to the ${fmtD(s.inj1)} injection.`:`At these settings, no amount of CO₂ issues credits.`;
+  $('vPer').textContent=isFinite(per)?kg(per)+' kg':'n/a';
+
+  $('vCap').textContent=isFinite(C)?fmtT(C)+' t':'n/a';
+  $('vRE').textContent=isFinite(L)?Math.round(m.re(L)*100)+'%':(Math.round(m.re(1e6)*100)+'%');
+  const C1x=s.R*daysHave, cr1x=m.credits(C1x*s.eta);
+  $('vCr').textContent=Math.max(0,cr1x).toFixed(2)+' t';
+  $('result').innerHTML=`we issue <b>${Math.max(0,cr1x).toFixed(2)} credits</b> from the ${fmtD(s.inj1)} injection.`;
+  const st=$('status');
+  if(!isFinite(days)){st.className='status no';st.textContent=`Each tonne costs more than it removes at ${Math.round(s.eta*100)}% liquefaction with ${fuelName} at Cella.`;}
+  else if(s.R>=per){st.className='status ok';st.textContent=`${kg(s.R)} kg a day covers ${target} credit${target>1?'s':''}.`;}
+  else{st.className='status no';st.textContent=`${kg(s.R)} kg a day is ${kg(per-s.R)} kg short of ${target} credit${target>1?'s':''}.`;}
+
+  // what we will have
+  const C1=s.R*daysHave, L1=C1*s.eta, J1=L1*(1-P.tl), cr1=m.credits(L1);
+  $('h1title').textContent='First injection, '+fmtD(s.inj1);
+  $('a1').textContent=fmtT(C1)+' t'; $('a2').textContent=fmtT(L1)+' t'; $('a3').textContent=fmtT(J1)+' t';
+  $('a4').textContent=cr1.toFixed(2)+' t'; $('a5').textContent=Math.round(m.re(L1)*100)+'%';
+  const d2=Math.max(0,Math.round((s.inj2-s.inj1)/DAY));
+  const C2=s.R*d2, L2=C2*s.eta, cr2=m.credits(L2);
+  $('h2title').textContent='Second injection, '+fmtD(s.inj2);
+  $('b1').textContent=fmtT(C2)+' t'; $('b2').textContent=fmtT(L2)+' t';
+  $('b4').textContent=cr2.toFixed(2)+' t'; $('b5').textContent=(cr1+cr2).toFixed(2)+' t';
+
+  // ladder
+  let rows='';
+  for(let n=1;n<=10;n++){
+    const Ln=m.needL(n), Cn=Ln/s.eta, dn=Cn/s.R, pn=Cn/Math.max(daysHave,1);
+    const ok=isFinite(dn)&&dn<=daysHave;
+    const cell=!isFinite(dn)?'<td class="nope">Never</td>':ok?'<td class="yes">Yes</td>':`<td class="nope">No</td>`;
+    rows+=`<tr class="${n===target?'sel':''}"><td>${n}${n===10?' (north star)':''}</td><td>${isFinite(pn)?kg(pn):'n/a'}</td><td>${isFinite(Cn)?fmtT(Cn):'n/a'}</td><td>${isFinite(Ln)?fmtT(Ln):'n/a'}</td><td>${isFinite(dn)?Math.ceil(dn):'n/a'}</td>${cell}</tr>`;
+  }
+  $('ladder').innerHTML=rows;
+
+  // timeline
+  const ghg=new Date(+s.inj1+7*DAY), iss6=new Date(+ghg+42*DAY), iss4=new Date(+ghg+28*DAY);
+  const ok6=iss6<=ISSUE;
+  const items=[
+    [s.restart,'Monitoring period restarts','',true],
+    [s.inj1,'First injection at Cella','',true],
+    [ghg,'GHG statement submitted','One week after injection.',true],
+    [iss4,'VVB review, short end','4 weeks.',false],
+    [iss6,'VVB review, long end','6 weeks.',false],
+    [ISSUE,'Credit issuance',ok6?'':'At risk if the review takes 6 weeks.',true],
+    [s.inj2,'Second injection','Issues in 2027.',false]];
+  items.sort((x,y)=>x[0]-y[0]);
+  $('time').innerHTML=items.map(([d,t,x,k])=>`<li class="${k?'key':''}"><span class="d">${fmtD(d)}</span> <span class="t">${t}</span>${x?`<span class="x">${x}</span>`:''}</li>`).join('');
+
+  drawChart(s,m);
+}
+let chart;
+const markers={id:'markers',afterDatasetsDraw(c,args,opts){
+  const {ctx,chartArea:{top,bottom},scales:{x}}=c;
+  ctx.save(); ctx.font='600 12px Public Sans, Arial'; ctx.fillStyle=opts.color; ctx.strokeStyle=opts.color; ctx.setLineDash([4,4]);
+  (opts.lines||[]).forEach(([i,label])=>{ if(i<0) return; const px=x.getPixelForValue(i); ctx.beginPath(); ctx.moveTo(px,top); ctx.lineTo(px,bottom); ctx.stroke(); ctx.fillText(label,px+5,top+14); });
+  ctx.restore();}};
+function drawChart(s,m){
+  const css=getComputedStyle(document.documentElement);
+  const teal=css.getPropertyValue('--teal').trim(), flag=css.getPropertyValue('--flag').trim(), mute=css.getPropertyValue('--mute').trim(), line=css.getPropertyValue('--line').trim(), deep=css.getPropertyValue('--deep').trim();
+  const end=new Date('2026-12-31T00:00:00'); const labels=[], data=[];
+  for(let d=new Date(s.restart);d<=end;d=new Date(+d+DAY)){
+    const n=Math.round((d-s.restart)/DAY); labels.push(fmtD(d)); data.push(+m.credits(s.R*n*s.eta).toFixed(3));
+  }
+  const i1=Math.round((s.inj1-s.restart)/DAY), i2=Math.round((s.inj2-s.restart)/DAY);
+  const tgt=labels.map(()=>target);
+  const cfg={type:'line',data:{labels,datasets:[
+      {label:'Credits if injected that day',data,borderColor:teal,backgroundColor:teal,borderWidth:2.5,pointRadius:0,tension:0},
+      {label:`Target: ${target} credit${target>1?'s':''}`,data:tgt,borderColor:flag,borderWidth:1.5,borderDash:[6,4],pointRadius:0}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:mute,font:{family:'Public Sans'}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(2)} t`}},
+        markers:{color:deep,lines:[[i1,'First injection'],[i2,'Second injection']]}},
+      scales:{x:{ticks:{color:mute,maxTicksLimit:9},grid:{color:line}},y:{beginAtZero:true,ticks:{color:mute},grid:{color:line},title:{display:true,text:'Credits (t CO₂e)',color:mute}}}},
+    plugins:[markers]};
+  if(chart) chart.destroy();
+  if(window.Chart) chart=new Chart($('chart'),cfg);
+}
+function buildTargets(){
+  $('targets').innerHTML=Array.from({length:10},(_,i)=>`<button type="button" class="${i===9?'star':''}" aria-pressed="${i+1===target}" data-n="${i+1}">${i+1}</button>`).join('');
+}
+$('targets').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;target=+b.dataset.n;buildTargets();render();});
+['liq','fuel','tl','il','restart','inj1','inj2'].forEach(id=>$(id).addEventListener('input',render));
+function link(r,n){ $(r).addEventListener('input',()=>{$(n).value=$(r).value;render();}); $(n).addEventListener('input',()=>{ if(+$(n).value<=+$(r).max) $(r).value=$(n).value; render();}); }
+link('rate','rateN'); link('energy','energyN');
+document.querySelectorAll('.quick button').forEach(b=>b.addEventListener('click',()=>{$('restart').value=b.dataset.r;render();}));
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',render);
+buildTargets(); render();
+</script>
+</body>
+</html>

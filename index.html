@@ -89,6 +89,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .result b{color:var(--deep)}
 .f .pair{display:flex;gap:8px;align-items:center}
 .f .pair input[type=number]{width:90px;font:600 15px var(--sans);padding:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini{font-size:12px;font-weight:600;color:var(--mute);display:flex;flex-direction:column;gap:3px}
+.mini input{font:600 14px var(--sans);padding:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:3px;width:100%}
 .note{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--teal);padding:12px 16px;margin-top:16px;font-size:15px}
 </style>
 </head>
@@ -118,13 +121,14 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
   <p class="status" id="status"></p>
 
   <h2>What we will have</h2>
-  
+
   <div class="have">
     <section>
       <h3 id="h1title">First injection</h3>
       <dl>
         <dt>CO₂ captured</dt><dd id="a1"></dd>
         <dt>CO₂ liquefied</dt><dd id="a2"></dd>
+        <dt>Lost to boil-off at Cella</dt><dd id="a6"></dd>
         <dt>CO₂ injected</dt><dd id="a3"></dd>
         <dt>Removal efficiency</dt><dd id="a5"></dd>
         <dt>Credits, issued 15 Dec</dt><dd class="big" id="a4"></dd>
@@ -135,6 +139,8 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
       <dl>
         <dt>CO₂ captured</dt><dd id="b1"></dd>
         <dt>CO₂ liquefied</dt><dd id="b2"></dd>
+        <dt>Lost to boil-off at Cella</dt><dd id="b6"></dd>
+        <dt>CO₂ injected</dt><dd id="b3"></dd>
         <dt>Credits, issued in 2027</dt><dd class="big" id="b4"></dd>
         <dt>Both injections</dt><dd id="b5"></dd>
       </dl>
@@ -142,18 +148,18 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
   </div>
 
   <h2>The credit ladder</h2>
-  
+
   <div class="scroll"><table>
-    <thead><tr><th>Credits</th><th>Capture per day needed (kg)</th><th>Total capture (t)</th><th>Total liquefied (t)</th><th>Days at this daily capture</th><th>Ready by injection?</th></tr></thead>
+    <thead><tr><th>Credits</th><th>Capture per day needed (kg)</th><th>Total capture (t)</th><th>Total liquefied (t)</th><th>Lost to boil-off (t)</th><th>Days at this daily capture</th><th>Ready by injection?</th></tr></thead>
     <tbody id="ladder"></tbody>
   </table></div>
 
   <h2>Credits by injection day</h2>
-  
+
   <div class="chartbox"><canvas id="chart" aria-label="Credits by injection day"></canvas></div>
 
   <h2>Working back from 15 December</h2>
-  
+
   <ol class="time" id="time"></ol>
 
 </main>
@@ -163,7 +169,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
   <div class="f">
     <label for="liq">Liquefaction <span class="v" id="liqV"></span></label>
     <input type="range" id="liq" min="30" max="90" step="5" value="70">
-    
+
   </div>
   <div class="f">
     <label for="energyN">Capture energy (MWh per tonne captured)</label>
@@ -187,6 +193,15 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
     <input type="range" id="il" min="0" max="5" step="0.5" value="0.5">
   </div>
   <div class="f">
+    <label>Storage before injection</label>
+    <div class="grid2">
+      <label class="mini">Our tank, working capacity (kg)<input type="number" id="tank" min="0" step="50" value="900"></label>
+      <label class="mini">Cella boil-off (% of tank a day)<input type="number" id="boil" min="0" step="0.05" value="0.2"></label>
+      <label class="mini">Cella tank size (t)<input type="number" id="ccap" min="0" step="1" value="20"></label>
+      <label class="mini">Cella's own CO₂ at first injection (t)<input type="number" id="cown" min="0" step="0.5" value="6.5"></label>
+    </div>
+  </div>
+  <div class="f">
     <label for="restart">Monitoring period restart</label>
     <input type="date" id="restart" value="2026-10-09">
     <div class="quick"><button type="button" data-r="2026-10-05">Best, 5 Oct</button><button type="button" data-r="2026-10-09">Base, 9 Oct</button></div>
@@ -194,7 +209,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
   <div class="f">
     <label for="inj1">First injection</label>
     <input type="date" id="inj1" value="2026-10-24">
-    
+
   </div>
   <div class="f">
     <label for="inj2">Second injection</label>
@@ -205,85 +220,102 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 </div>
 
 <script>
-const P={tl:0.005,il:0.005,emb:0.27190,trans:0.0024576,well:0.00043133,efCap:0.0046,pump:500,start:0.5,kwe:137.5};
+
+const P={emb:0.27190,trans:0.0024576,well:0.00043133,efCap:0.0046,pump:500,start:0.5,kwe:137.5};
 const ISSUE=new Date('2026-12-15T00:00:00');
 let target=1;
-const kg=v=>Math.round(v).toLocaleString('en-GB');
 const $=id=>document.getElementById(id);
 const DAY=864e5;
-const fmtT=kg=>(kg/1000).toLocaleString('en-GB',{minimumFractionDigits:kg<10000?2:1,maximumFractionDigits:kg<10000?2:1});
+const kg=v=>Math.round(v).toLocaleString('en-GB');
+const fmtT=v=>(v/1000).toLocaleString('en-GB',{minimumFractionDigits:v<10000?2:1,maximumFractionDigits:v<10000?2:1});
 const fmtD=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
 const parse=v=>new Date(v+'T00:00:00');
+const num=(id,min,def)=>{const v=parseFloat($(id).value);return isFinite(v)?Math.max(min,v):def;};
 
 function settings(){
-  return {eta:+$('liq').value/100, R:Math.max(0,+$('rateN').value||0), intK:Math.max(0.1,+$('energyN').value||0.1), ef:+$('fuel').value,
-    restart:parse($('restart').value), inj1:parse($('inj1').value), inj2:parse($('inj2').value), tl:+$('tl').value/100, il:+$('il').value/100};
+  return {eta:+$('liq').value/100, R:num('rateN',0,0), intK:num('energyN',0.1,42.5), ef:+$('fuel').value,
+    tl:+$('tl').value/100, il:+$('il').value/100,
+    tank:num('tank',0,900), btot:num('ccap',0,20)*1000*num('boil',0,0.2)/100, cown:num('cown',0,6.5)*1000,
+    restart:parse($('restart').value), inj1:parse($('inj1').value), inj2:parse($('inj2').value)};
 }
-function model(s){
-  const ret=(1-s.tl)*(1-s.il);
-  const a=ret - s.intK*P.efCap/s.eta - P.emb - P.trans*(1-s.tl) - (1-s.tl)/P.pump*P.kwe*s.ef - P.well*(1-s.tl);
-  const b=P.start*P.kwe*s.ef;
-  const credits=L=>L<=0?0:(a*L-b)/1000;
-  const re=L=>L<=0?0:(a*L-b)/(L*ret);
-  const needL=N=>a>0?(1000*N+b)/a:Infinity;
-  return {a,b,ret,credits,needL,re};
+// One batch: capture R kg/day for `days` days, hold in our tank, overflow to Cella, inject on the last day.
+// cown = other CO2 sharing Cella's tank (boil-off split by share).
+function batch(s,R,days,cown){
+  const lq=R*s.eta; let onsite=0,cella=0,lost=0,moved=0;
+  for(let d=0;d<days;d++){
+    onsite+=lq;
+    const last=d===days-1;
+    if(!last && onsite>=s.tank && onsite>0){cella+=onsite*(1-s.tl);moved+=onsite;onsite=0;}
+    if(cella>0){const b=Math.min(cella,s.btot*cella/(cown+cella));cella-=b;lost+=b;}
+    if(last){cella+=onsite*(1-s.tl);moved+=onsite;onsite=0;}
+  }
+  const C=R*days, L=lq*days, J=cella, stored=J*(1-s.il);
+  const em=L*(s.intK*P.efCap/s.eta+P.emb)+moved*P.trans+(J>0?(J/P.pump+P.start)*P.kwe*s.ef:0)+J*P.well;
+  const net=stored-em;
+  return {C,L,lost,J,stored,net,credits:net/1000,re:stored>0?net/stored:0};
+}
+function rateFor(s,N,days,cown){
+  if(days<=0) return Infinity;
+  let lo=0,hi=50000;
+  if(batch(s,hi,days,cown).credits<N) return Infinity;
+  for(let i=0;i<50;i++){const mid=(lo+hi)/2; if(batch(s,mid,days,cown).credits>=N) hi=mid; else lo=mid;}
+  return hi;
+}
+function daysFor(s,N,cown){
+  if(s.R<=0) return Infinity;
+  for(let d=1;d<=600;d++){ if(batch(s,s.R,d,cown).credits>=N) return d; }
+  return Infinity;
 }
 function render(){
-  const s=settings(), m=model(s);
+  const s=settings();
   $('liqV').textContent=Math.round(s.eta*100)+'%';
   $('tlV').textContent=(s.tl*100).toFixed(1)+'%'; $('ilV').textContent=(s.il*100).toFixed(1)+'%';
   const daysHave=Math.max(0,Math.round((s.inj1-s.restart)/DAY));
-  const L=m.needL(target), C=L/s.eta, days=C/s.R, per=C/Math.max(daysHave,1);
   const fuelName=$('fuel').selectedOptions[0].text;
-  $('hero').innerHTML=isFinite(C)?`To issue <b>${target} credit${target>1?'s':''}</b>, we need to capture <b>${kg(per)} kg of CO₂ a day</b> from ${fmtD(s.restart)} to the ${fmtD(s.inj1)} injection.`:`At these settings, no amount of CO₂ issues credits.`;
+  const per=rateFor(s,target,daysHave,s.cown);
+  const tb=isFinite(per)?batch(s,per,daysHave,s.cown):null;
+  $('hero').innerHTML=isFinite(per)?`To issue <b>${target} credit${target>1?'s':''}</b>, we need to capture <b>${kg(per)} kg of CO₂ a day</b> from ${fmtD(s.restart)} to the ${fmtD(s.inj1)} injection.`:`At these settings, no daily capture reaches ${target} credit${target>1?'s':''} by ${fmtD(s.inj1)}.`;
   $('vPer').textContent=isFinite(per)?kg(per)+' kg':'n/a';
-
-  $('vCap').textContent=isFinite(C)?fmtT(C)+' t':'n/a';
-  $('vRE').textContent=isFinite(L)?Math.round(m.re(L)*100)+'%':(Math.round(m.re(1e6)*100)+'%');
-  const C1x=s.R*daysHave, cr1x=m.credits(C1x*s.eta);
-  $('vCr').textContent=Math.max(0,cr1x).toFixed(2)+' t';
-  $('result').innerHTML=`we issue <b>${Math.max(0,cr1x).toFixed(2)} credits</b> from the ${fmtD(s.inj1)} injection.`;
+  $('vCap').textContent=tb?fmtT(tb.C)+' t':'n/a';
+  $('vRE').textContent=tb?Math.round(tb.re*100)+'%':'n/a';
+  const b1=batch(s,s.R,daysHave,s.cown);
+  $('vCr').textContent=Math.max(0,b1.credits).toFixed(2)+' t';
+  $('result').innerHTML=`we issue <b>${Math.max(0,b1.credits).toFixed(2)} credits</b> from the ${fmtD(s.inj1)} injection.`;
   const st=$('status');
-  if(!isFinite(days)){st.className='status no';st.textContent=`Each tonne costs more than it removes at ${Math.round(s.eta*100)}% liquefaction with ${fuelName} at Cella.`;}
+  if(!isFinite(per)){st.className='status no';st.textContent=`Not reachable at ${Math.round(s.eta*100)}% liquefaction with ${fuelName} at Cella.`;}
   else if(s.R>=per){st.className='status ok';st.textContent=`${kg(s.R)} kg a day covers ${target} credit${target>1?'s':''}.`;}
   else{st.className='status no';st.textContent=`${kg(s.R)} kg a day is ${kg(per-s.R)} kg short of ${target} credit${target>1?'s':''}.`;}
 
-  // what we will have
-  const C1=s.R*daysHave, L1=C1*s.eta, J1=L1*(1-P.tl), cr1=m.credits(L1);
   $('h1title').textContent='First injection, '+fmtD(s.inj1);
-  $('a1').textContent=fmtT(C1)+' t'; $('a2').textContent=fmtT(L1)+' t'; $('a3').textContent=fmtT(J1)+' t';
-  $('a4').textContent=cr1.toFixed(2)+' t'; $('a5').textContent=Math.round(m.re(L1)*100)+'%';
+  $('a1').textContent=fmtT(b1.C)+' t'; $('a2').textContent=fmtT(b1.L)+' t'; $('a6').textContent=fmtT(b1.lost)+' t';
+  $('a3').textContent=fmtT(b1.J)+' t'; $('a5').textContent=Math.round(b1.re*100)+'%'; $('a4').textContent=b1.credits.toFixed(2)+' t';
   const d2=Math.max(0,Math.round((s.inj2-s.inj1)/DAY));
-  const C2=s.R*d2, L2=C2*s.eta, cr2=m.credits(L2);
+  const b2=batch(s,s.R,d2,0);   // Cella's own CO2 went in with the first injection
   $('h2title').textContent='Second injection, '+fmtD(s.inj2);
-  $('b1').textContent=fmtT(C2)+' t'; $('b2').textContent=fmtT(L2)+' t';
-  $('b4').textContent=cr2.toFixed(2)+' t'; $('b5').textContent=(cr1+cr2).toFixed(2)+' t';
+  $('b1').textContent=fmtT(b2.C)+' t'; $('b2').textContent=fmtT(b2.L)+' t'; $('b6').textContent=fmtT(b2.lost)+' t'; $('b3').textContent=fmtT(b2.J)+' t';
+  $('b4').textContent=b2.credits.toFixed(2)+' t'; $('b5').textContent=(b1.credits+b2.credits).toFixed(2)+' t';
 
-  // ladder
   let rows='';
   for(let n=1;n<=10;n++){
-    const Ln=m.needL(n), Cn=Ln/s.eta, dn=Cn/s.R, pn=Cn/Math.max(daysHave,1);
-    const ok=isFinite(dn)&&dn<=daysHave;
-    const cell=!isFinite(dn)?'<td class="nope">Never</td>':ok?'<td class="yes">Yes</td>':`<td class="nope">No</td>`;
-    rows+=`<tr class="${n===target?'sel':''}"><td>${n}${n===10?' (north star)':''}</td><td>${isFinite(pn)?kg(pn):'n/a'}</td><td>${isFinite(Cn)?fmtT(Cn):'n/a'}</td><td>${isFinite(Ln)?fmtT(Ln):'n/a'}</td><td>${isFinite(dn)?Math.ceil(dn):'n/a'}</td>${cell}</tr>`;
+    const pn=rateFor(s,n,daysHave,s.cown), bn=isFinite(pn)?batch(s,pn,daysHave,s.cown):null, dn=daysFor(s,n,s.cown);
+    const ok=isFinite(pn)&&s.R>=pn;
+    const cell=!isFinite(pn)?'<td class="nope">Never</td>':ok?'<td class="yes">Yes</td>':'<td class="nope">No</td>';
+    rows+=`<tr class="${n===target?'sel':''}"><td>${n}${n===10?' (north star)':''}</td><td>${isFinite(pn)?kg(pn):'n/a'}</td><td>${bn?fmtT(bn.C):'n/a'}</td><td>${bn?fmtT(bn.L):'n/a'}</td><td>${bn?fmtT(bn.lost):'n/a'}</td><td>${isFinite(dn)?dn:'Never'}</td>${cell}</tr>`;
   }
   $('ladder').innerHTML=rows;
 
-  // timeline
   const ghg=new Date(+s.inj1+7*DAY), iss6=new Date(+ghg+42*DAY), iss4=new Date(+ghg+28*DAY);
-  const ok6=iss6<=ISSUE;
   const items=[
     [s.restart,'Monitoring period restarts','',true],
     [s.inj1,'First injection at Cella','',true],
     [ghg,'GHG statement submitted','One week after injection.',true],
     [iss4,'VVB review, short end','4 weeks.',false],
     [iss6,'VVB review, long end','6 weeks.',false],
-    [ISSUE,'Credit issuance',ok6?'':'At risk if the review takes 6 weeks.',true],
+    [ISSUE,'Credit issuance',iss6<=ISSUE?'':'At risk if the review takes 6 weeks.',true],
     [s.inj2,'Second injection','Issues in 2027.',false]];
   items.sort((x,y)=>x[0]-y[0]);
   $('time').innerHTML=items.map(([d,t,x,k])=>`<li class="${k?'key':''}"><span class="d">${fmtD(d)}</span> <span class="t">${t}</span>${x?`<span class="x">${x}</span>`:''}</li>`).join('');
-
-  drawChart(s,m);
+  drawChart(s);
 }
 let chart;
 const markers={id:'markers',afterDatasetsDraw(c,args,opts){
@@ -291,22 +323,21 @@ const markers={id:'markers',afterDatasetsDraw(c,args,opts){
   ctx.save(); ctx.font='600 12px Public Sans, Arial'; ctx.fillStyle=opts.color; ctx.strokeStyle=opts.color; ctx.setLineDash([4,4]);
   (opts.lines||[]).forEach(([i,label])=>{ if(i<0) return; const px=x.getPixelForValue(i); ctx.beginPath(); ctx.moveTo(px,top); ctx.lineTo(px,bottom); ctx.stroke(); ctx.fillText(label,px+5,top+14); });
   ctx.restore();}};
-function drawChart(s,m){
+function drawChart(s){
   const css=getComputedStyle(document.documentElement);
-  const teal=css.getPropertyValue('--teal').trim(), flag=css.getPropertyValue('--flag').trim(), mute=css.getPropertyValue('--mute').trim(), line=css.getPropertyValue('--line').trim(), deep=css.getPropertyValue('--deep').trim();
+  const g=n=>css.getPropertyValue(n).trim();
   const end=new Date('2026-12-31T00:00:00'); const labels=[], data=[];
   for(let d=new Date(s.restart);d<=end;d=new Date(+d+DAY)){
-    const n=Math.round((d-s.restart)/DAY); labels.push(fmtD(d)); data.push(+m.credits(s.R*n*s.eta).toFixed(3));
+    const n=Math.round((d-s.restart)/DAY); labels.push(fmtD(d)); data.push(n>0?+batch(s,s.R,n,s.cown).credits.toFixed(3):0);
   }
   const i1=Math.round((s.inj1-s.restart)/DAY), i2=Math.round((s.inj2-s.restart)/DAY);
-  const tgt=labels.map(()=>target);
   const cfg={type:'line',data:{labels,datasets:[
-      {label:'Credits if injected that day',data,borderColor:teal,backgroundColor:teal,borderWidth:2.5,pointRadius:0,tension:0},
-      {label:`Target: ${target} credit${target>1?'s':''}`,data:tgt,borderColor:flag,borderWidth:1.5,borderDash:[6,4],pointRadius:0}]},
+      {label:'Credits if injected that day',data,borderColor:g('--teal'),backgroundColor:g('--teal'),borderWidth:2.5,pointRadius:0,tension:0},
+      {label:`Target: ${target} credit${target>1?'s':''}`,data:labels.map(()=>target),borderColor:g('--flag'),borderWidth:1.5,borderDash:[6,4],pointRadius:0}]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{labels:{color:mute,font:{family:'Public Sans'}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(2)} t`}},
-        markers:{color:deep,lines:[[i1,'First injection'],[i2,'Second injection']]}},
-      scales:{x:{ticks:{color:mute,maxTicksLimit:9},grid:{color:line}},y:{beginAtZero:true,ticks:{color:mute},grid:{color:line},title:{display:true,text:'Credits (t CO₂e)',color:mute}}}},
+      plugins:{legend:{labels:{color:g('--mute'),font:{family:'Public Sans'}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(2)} t`}},
+        markers:{color:g('--deep'),lines:[[i1,'First injection'],[i2,'Second injection']]}},
+      scales:{x:{ticks:{color:g('--mute'),maxTicksLimit:9},grid:{color:g('--line')}},y:{ticks:{color:g('--mute')},grid:{color:g('--line')},title:{display:true,text:'Credits (t CO₂e)',color:g('--mute')}}}},
     plugins:[markers]};
   if(chart) chart.destroy();
   if(window.Chart) chart=new Chart($('chart'),cfg);
@@ -315,7 +346,7 @@ function buildTargets(){
   $('targets').innerHTML=Array.from({length:10},(_,i)=>`<button type="button" class="${i===9?'star':''}" aria-pressed="${i+1===target}" data-n="${i+1}">${i+1}</button>`).join('');
 }
 $('targets').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;target=+b.dataset.n;buildTargets();render();});
-['liq','fuel','tl','il','restart','inj1','inj2'].forEach(id=>$(id).addEventListener('input',render));
+['liq','fuel','tl','il','tank','boil','ccap','cown','restart','inj1','inj2'].forEach(id=>$(id).addEventListener('input',render));
 function link(r,n){ $(r).addEventListener('input',()=>{$(n).value=$(r).value;render();}); $(n).addEventListener('input',()=>{ if(+$(n).value<=+$(r).max) $(r).value=$(n).value; render();}); }
 link('rate','rateN'); link('energy','energyN');
 document.querySelectorAll('.quick button').forEach(b=>b.addEventListener('click',()=>{$('restart').value=b.dataset.r;render();}));
